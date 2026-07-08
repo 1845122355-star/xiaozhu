@@ -1,0 +1,1 @@
+v1.0 Release created: include docs/广西发改委新干部手册（2026版）.docx and docs/广西发改委新干部手册（2026版）.final.pdf
