@@ -28,7 +28,7 @@ jobs:
             cp docs/deliverables/logo.png .
           fi
 
-      - name: Install dependencies (pandoc + xelatex + fonts + jq)
+      - name: Install dependencies (pandoc + xelatex + fonts)
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -39,44 +39,31 @@ jobs:
             texlive-latex-recommended \
             texlive-fonts-recommended \
             fonts-lmodern \
-            texlive-latex-extra \
-            jq
+            texlive-latex-extra
           sudo fc-cache -f -v || true
           fc-list | grep -i "noto\|lmodern" || true
 
       - name: Create output directory
         run: mkdir -p dist
 
-      - name: Build DOCX
+      - name: Build DOCX (with timestamped ASCII filename)
         id: build_docx
         run: |
-          pandoc "docs/deliverables/广西发改委新干部手册_2026.md" -s -o "dist/广西发改委新干部手册（2026版）.docx" --toc --toc-depth=3 --resource-path=.:docs/deliverables
+          ts=$(date -u +"%Y%m%dT%H%M%SZ")
+          OUT_DOCX="dist/handbook_2026_${ts}.docx"
+          echo "Generating DOCX -> $OUT_DOCX"
+          pandoc "docs/deliverables/广西发改委新干部手册_2026.md" -s -o "$OUT_DOCX" --toc --toc-depth=3 --resource-path=.:docs/deliverables
+          ls -la dist
 
-      - name: Build PDF (tolerate failure)
+      - name: Build PDF (with timestamped ASCII filename, tolerate failure)
         id: build_pdf
         continue-on-error: true
         run: |
-          pandoc "docs/deliverables/广西发改委新干部手册_2026.md" -s -o "dist/广西发改委新干部手册（2026版）.final.pdf" --pdf-engine=xelatex --toc --toc-depth=3 --resource-path=.:docs/deliverables
-
-      - name: Rename artifacts to avoid name collisions
-        run: |
-          set -e
           ts=$(date -u +"%Y%m%dT%H%M%SZ")
-          echo "Timestamp for artifacts: $ts"
-          DOCX_SRC="dist/广西发改委新干部手册（2026版）.docx"
-          PDF_SRC="dist/广西发改委新干部手册（2026版）.final.pdf"
-          if [ -f "$DOCX_SRC" ]; then
-            mv "$DOCX_SRC" "dist/handbook_2026_${ts}.docx"
-            echo "Renamed docx to dist/handbook_2026_${ts}.docx"
-          else
-            echo "No docx found to rename"
-          fi
-          if [ -f "$PDF_SRC" ]; then
-            mv "$PDF_SRC" "dist/handbook_2026_${ts}.final.pdf"
-            echo "Renamed pdf to dist/handbook_2026_${ts}.final.pdf"
-          else
-            echo "No pdf found to rename"
-          fi
+          OUT_PDF="dist/handbook_2026_${ts}.pdf"
+          echo "Generating PDF -> $OUT_PDF"
+          pandoc "docs/deliverables/广西发改委新干部手册_2026.md" -s -o "$OUT_PDF" --pdf-engine=xelatex --toc --toc-depth=3 --resource-path=.:docs/deliverables
+          ls -la dist || true
 
       - name: List dist (debug)
         run: ls -la dist || true
@@ -85,8 +72,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v1.0
-          name: "广西发改委新干部工作手册（2026版） v1.0"
+          name: '广西发改委新干部工作手册（2026版） v1.0'
           files: dist/*
 
-      - name: Done - show release url (debug)
-        run: echo "Release attempted: check Releases page for assets (dist/* uploaded if present)."
+      - name: Done - notify
+        run: echo "Workflow finished. Check Releases page for generated assets."
