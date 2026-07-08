@@ -1,5 +1,8 @@
 name: Build and publish handbook
 
+permissions:
+  contents: write
+
 on:
   push:
     branches: [ 'v1.0' ]
