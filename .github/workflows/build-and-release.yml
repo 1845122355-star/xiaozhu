@@ -1,0 +1,58 @@
+name: Build and publish handbook
+
+on:
+  push:
+    branches: [ 'v1.0' ]
+  workflow_dispatch:
+
+jobs:
+  build_and_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc texlive-xetex texlive-lang-chinese
+
+      - name: Create output directory
+        run: mkdir -p dist
+
+      - name: Build DOCX
+        run: |
+          pandoc docs/deliverables/广西发改委新干部手册_2026.md -s -o dist/广西发改委新干部手册（2026版）.docx --toc --toc-depth=3
+
+      - name: Build PDF
+        run: |
+          pandoc docs/deliverables/广西发改委新干部手册_2026.md -s -o dist/广西发改委新干部手册（2026版）.final.pdf --pdf-engine=xelatex -V CJKmainfont="Noto Serif CJK SC" --toc --toc-depth=3
+
+      - name: Create Release v1.0
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v1.0
+          release_name: 广西发改委新干部工作手册（2026版） v1.0
+          body: |
+            发布广西壮族自治区发展改革委新干部工作手册（2026版）正式版。
+            交付物：.docx（可编辑）与 .final.pdf（印刷/分发用）。
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload DOCX asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/广西发改委新干部手册（2026版）.docx
+          asset_name: 广西发改委新干部手册（2026版）.docx
+          asset_content_type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
+
+      - name: Upload PDF asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/广西发改委新干部手册（2026版）.final.pdf
+          asset_name: 广西发改委新干部手册（2026版）.final.pdf
+          asset_content_type: application/pdf
