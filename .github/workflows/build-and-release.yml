@@ -39,7 +39,8 @@ jobs:
             texlive-latex-recommended \
             texlive-fonts-recommended \
             fonts-lmodern \
-            texlive-latex-extra
+            texlive-latex-extra \
+            jq
           sudo fc-cache -f -v || true
           fc-list | grep -i "noto\|lmodern" || true
 
@@ -57,6 +58,24 @@ jobs:
         run: |
           pandoc "docs/deliverables/广西发改委新干部手册_2026.md" -s -o "dist/广西发改委新干部手册（2026版）.final.pdf" --pdf-engine=xelatex --toc --toc-depth=3 --resource-path=.:docs/deliverables
 
+      - name: Rename artifacts to avoid name collisions
+        run: |
+          set -e
+          ts=$(date -u +"%Y%m%dT%H%M%SZ")
+          echo "Timestamp for artifacts: $ts"
+          if [ -f "dist/广西发改委新干部手册（2026版）.docx" ]; then
+            mv "dist/广西发改委新干部手册（2026版）.docx" "dist/广西发改委新干部手册（2026版）_${ts}.docx"
+            echo "Renamed docx to dist/广西发改委新干部手册（2026版）_${ts}.docx"
+          else
+            echo "No docx found to rename"
+          fi
+          if [ -f "dist/广西发改委新干部手册（2026版）.final.pdf" ]; then
+            mv "dist/广西发改委新干部手册（2026版）.final.pdf" "dist/广西发改委新干部手册（2026版）_${ts}.final.pdf"
+            echo "Renamed pdf to dist/广西发改委新干部手册（2026版）_${ts}.final.pdf"
+          else
+            echo "No pdf found to rename"
+          fi
+
       - name: List dist (debug)
         run: ls -la dist || true
 
@@ -68,4 +87,4 @@ jobs:
           files: dist/*
 
       - name: Done - show release url (debug)
-        run: echo "Release should be created and assets uploaded (if present). Check Releases page."
+        run: echo "Release attempted: check Releases page for assets (dist/* uploaded if present)."
