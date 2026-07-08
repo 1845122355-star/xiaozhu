@@ -8,14 +8,12 @@ on:
 jobs:
   build_and_release:
     runs-on: ubuntu-latest
-    container:
-      image: pandoc/latex:latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: List workspace (debug)
+      - name: Show workspace (debug)
         run: ls -la || true
 
       - name: Ensure docs resource path exists (debug)
@@ -27,11 +25,11 @@ jobs:
             cp docs/deliverables/logo.png .
           fi
 
-      - name: Install Noto CJK fonts (so xelatex has chinese fonts)
+      - name: Install dependencies (pandoc + xelatex + fonts)
         run: |
-          apt-get update
-          apt-get install -y fonts-noto-cjk
-          fc-cache -f -v || true
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pandoc texlive-xetex texlive-lang-chinese fonts-noto-cjk
+          sudo fc-cache -f -v || true
           fc-list | grep -i "noto" || true
 
       - name: Create output directory
