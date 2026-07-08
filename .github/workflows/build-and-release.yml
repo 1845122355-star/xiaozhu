@@ -28,7 +28,7 @@ jobs:
             cp docs/deliverables/logo.png .
           fi
 
-      - name: Install dependencies (pandoc + xelatex + fonts)
+      - name: Install dependencies (pandoc + xelatex + fonts + jq)
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -62,16 +62,17 @@ jobs:
         run: |
           set -e
           ts=$(date -u +"%Y%m%dT%H%M%SZ")
+          BASENAME='广西发改委新干部手册（2026版）'
           echo "Timestamp for artifacts: $ts"
-          if [ -f "dist/广西发改委新干部手册（2026版）.docx" ]; then
-            mv "dist/广西发改委新干部手册（2026版）.docx" "dist/广西发改委新干部手册（2026版）_${ts}.docx"
-            echo "Renamed docx to dist/广西发改委新干部手册（2026版）_${ts}.docx"
+          if [ -f "dist/${BASENAME}.docx" ]; then
+            mv "dist/${BASENAME}.docx" "dist/${BASENAME}_${ts}.docx"
+            echo "Renamed docx to dist/${BASENAME}_${ts}.docx"
           else
             echo "No docx found to rename"
           fi
-          if [ -f "dist/广西发改委新干部手册（2026版）.final.pdf" ]; then
-            mv "dist/广西发改委新干部手册（2026版）.final.pdf" "dist/广西发改委新干部手册（2026版）_${ts}.final.pdf"
-            echo "Renamed pdf to dist/广西发改委新干部手册（2026版）_${ts}.final.pdf"
+          if [ -f "dist/${BASENAME}.final.pdf" ]; then
+            mv "dist/${BASENAME}.final.pdf" "dist/${BASENAME}_${ts}.final.pdf"
+            echo "Renamed pdf to dist/${BASENAME}_${ts}.final.pdf"
           else
             echo "No pdf found to rename"
           fi
