@@ -62,17 +62,18 @@ jobs:
         run: |
           set -e
           ts=$(date -u +"%Y%m%dT%H%M%SZ")
-          BASENAME='广西发改委新干部手册（2026版）'
           echo "Timestamp for artifacts: $ts"
-          if [ -f "dist/${BASENAME}.docx" ]; then
-            mv "dist/${BASENAME}.docx" "dist/${BASENAME}_${ts}.docx"
-            echo "Renamed docx to dist/${BASENAME}_${ts}.docx"
+          DOCX_SRC="dist/广西发改委新干部手册（2026版）.docx"
+          PDF_SRC="dist/广西发改委新干部手册（2026版）.final.pdf"
+          if [ -f "$DOCX_SRC" ]; then
+            mv "$DOCX_SRC" "dist/handbook_2026_${ts}.docx"
+            echo "Renamed docx to dist/handbook_2026_${ts}.docx"
           else
             echo "No docx found to rename"
           fi
-          if [ -f "dist/${BASENAME}.final.pdf" ]; then
-            mv "dist/${BASENAME}.final.pdf" "dist/${BASENAME}_${ts}.final.pdf"
-            echo "Renamed pdf to dist/${BASENAME}_${ts}.final.pdf"
+          if [ -f "$PDF_SRC" ]; then
+            mv "$PDF_SRC" "dist/handbook_2026_${ts}.final.pdf"
+            echo "Renamed pdf to dist/handbook_2026_${ts}.final.pdf"
           else
             echo "No pdf found to rename"
           fi
