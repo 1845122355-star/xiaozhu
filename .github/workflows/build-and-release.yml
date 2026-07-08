@@ -8,25 +8,45 @@ on:
 jobs:
   build_and_release:
     runs-on: ubuntu-latest
+    container:
+      image: pandoc/latex:latest
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: List workspace (debug)
+        run: ls -la || true
+
+      - name: Ensure docs resource path exists (debug)
+        run: ls -la docs || true && ls -la docs/deliverables || true
+
+      - name: (If logo present) copy logo to working dir
+        run: |
+          if [ -f "docs/deliverables/logo.png" ]; then
+            cp docs/deliverables/logo.png .
+          fi
+
+      - name: Install Noto CJK fonts (so xelatex has chinese fonts)
         run: |
           sudo apt-get update
-          sudo apt-get install -y pandoc texlive-xetex texlive-lang-chinese
+          sudo apt-get install -y fonts-noto-cjk
+          fc-cache -f -v || true
+          fc-list | grep -i "noto" || true
 
       - name: Create output directory
         run: mkdir -p dist
 
       - name: Build DOCX
         run: |
-          pandoc docs/deliverables/广西发改委新干部手册_2026.md -s -o dist/广西发改委新干部手册（2026版）.docx --toc --toc-depth=3
+          pandoc docs/deliverables/广西发改委新干部手册_2026.md -s -o "dist/广西发改委新干部手册（2026版）.docx" --toc --toc-depth=3 --resource-path=.:docs/deliverables
 
       - name: Build PDF
         run: |
-          pandoc docs/deliverables/广西发改委新干部手册_2026.md -s -o dist/广西发改委新干部手册（2026版）.final.pdf --pdf-engine=xelatex -V CJKmainfont="Noto Serif CJK SC" --toc --toc-depth=3
+          pandoc docs/deliverables/广西发改委新干部手册_2026.md -s -o "dist/广西发改委新干部手册（2026版）.final.pdf" --pdf-engine=xelatex --toc --toc-depth=3 --resource-path=.:docs/deliverables
+
+      - name: List dist
+        run: ls -la dist
 
       - name: Create Release v1.0
         id: create_release
@@ -35,8 +55,8 @@ jobs:
           tag_name: v1.0
           release_name: 广西发改委新干部工作手册（2026版） v1.0
           body: |
-            发布广西壮族自治区发展改革委新干部工作手册（2026版）正式版。
-            交付物：.docx（可编辑）与 .final.pdf（印刷/分发用）。
+            自动构建并发布：广西壮族自治区发展改革委新干部手册（2026版）。
+            交付物：.docx（可编辑）与 .final.pdf（印刷用）。
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
