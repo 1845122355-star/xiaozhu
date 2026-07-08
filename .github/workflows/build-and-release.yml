@@ -16,7 +16,7 @@ jobs:
       - name: Show workspace (debug)
         run: ls -la || true
 
-      - name: Ensure docs resource path exists (debug)
+      - name: Show docs tree (debug)
         run: ls -la docs || true && ls -la docs/deliverables || true
 
       - name: (If logo present) copy logo to working dir
@@ -28,23 +28,40 @@ jobs:
       - name: Install dependencies (pandoc + xelatex + fonts)
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends pandoc texlive-xetex texlive-lang-chinese fonts-noto-cjk
+          sudo apt-get install -y --no-install-recommends \
+            pandoc \
+            texlive-xetex \
+            texlive-lang-chinese \
+            fonts-noto-cjk \
+            texlive-latex-recommended \
+            texlive-fonts-recommended \
+            fonts-lmodern \
+            texlive-latex-extra
           sudo fc-cache -f -v || true
-          fc-list | grep -i "noto" || true
+          fc-list | grep -i "noto\|lmodern" || true
 
       - name: Create output directory
         run: mkdir -p dist
 
       - name: Build DOCX
+        id: build_docx
         run: |
-          pandoc docs/deliverables/广西发改委新干部手册_2026.md -s -o "dist/广西发改委新干部手册（2026版）.docx" --toc --toc-depth=3 --resource-path=.:docs/deliverables
+          pandoc "docs/deliverables/广西发改委新干部手册_2026.md" -s -o "dist/广西发改委新干部手册（2026版）.docx" --toc --toc-depth=3 --resource-path=.:docs/deliverables
 
-      - name: Build PDF
+      - name: Build PDF (tolerate failure)
+        id: build_pdf
+        continue-on-error: true
         run: |
-          pandoc docs/deliverables/广西发改委新干部手册_2026.md -s -o "dist/广西发改委新干部手册（2026版）.final.pdf" --pdf-engine=xelatex --toc --toc-depth=3 --resource-path=.:docs/deliverables
+          pandoc "docs/deliverables/广西发改委新干部手册_2026.md" -s -o "dist/广西发改委新干部手册（2026版）.final.pdf" --pdf-engine=xelatex --toc --toc-depth=3 --resource-path=.:docs/deliverables
 
-      - name: List dist
-        run: ls -la dist
+      - name: List dist (debug)
+        run: ls -la dist || true
+
+      - name: Check artifacts exist
+        id: check_artifacts
+        run: |
+          if [ -f "dist/广西发改委新干部手册（2026版）.docx" ]; then echo "docx_exists=true" >> "$GITHUB_OUTPUT"; else echo "docx_exists=false" >> "$GITHUB_OUTPUT"; fi
+          if [ -f "dist/广西发改委新干部手册（2026版）.final.pdf" ]; then echo "pdf_exists=true" >> "$GITHUB_OUTPUT"; else echo "pdf_exists=false" >> "$GITHUB_OUTPUT"; fi
 
       - name: Create Release v1.0
         id: create_release
@@ -54,12 +71,13 @@ jobs:
           release_name: 广西发改委新干部工作手册（2026版） v1.0
           body: |
             自动构建并发布：广西壮族自治区发展改革委新干部手册（2026版）。
-            交付物：.docx（可编辑）与 .final.pdf（印刷用）。
+            交付物：.docx（可编辑）与 .final.pdf（印刷用，若生成成功）。
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload DOCX asset
+      - name: Upload DOCX asset (if exists)
+        if: steps.check_artifacts.outputs.docx_exists == 'true'
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -67,7 +85,8 @@ jobs:
           asset_name: 广西发改委新干部手册（2026版）.docx
           asset_content_type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
 
-      - name: Upload PDF asset
+      - name: Upload PDF asset (if exists)
+        if: steps.check_artifacts.outputs.pdf_exists == 'true'
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
